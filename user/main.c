@@ -187,7 +187,7 @@ int main() {
     DMA_Configure();
     PWM_Init_Config();   // PWM 초기화
 
-    int bullet =  10;
+    int bullet =  5;
     int start = 0;
     while(1) 
     {

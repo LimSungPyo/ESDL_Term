@@ -21,8 +21,10 @@ uint32_t THRESHOLD = 3400; // 기준치
    PB0(ADC_Value[3]) -> Sensor4
    PB1(ADC_Value[4]) -> Sensor5
    초기에는 Sensor값이 모두 0으로 초기화된 상태
-   각각의 조도센서가 레이저를 인식하면 인식한 조도센서의 값이 1로 업데이트됨 */
+   각각의 조도센서가 레이저를 인식하면 인식한 조도센서의 값이 1로 업데이트됨 
+   만약 레이저가 조도센서에 적중한다면 Currentstate가 1 증가 */
 int Sensor1 = 0, Sensor2 = 0, Sensor3 = 0, Sensor4 = 0, Sensor5 = 0;
+int PreviousState = 0, CurrentState = 0;
 
 void RCC_Configure(void)
 {
@@ -141,11 +143,31 @@ void DMA_Configure(void)
 
 void UpdateSensorStates(void) 
 {
-    if (ADC_Value[0] < THRESHOLD) Sensor1 = 1;// PA5
-    if (ADC_Value[1] < THRESHOLD) Sensor2 = 1;// PA6
-    if (ADC_Value[2] < THRESHOLD) Sensor3 = 1;// PA7
-    if (ADC_Value[3] < THRESHOLD) Sensor4 = 1;// PB0
-    if (ADC_Value[4] < THRESHOLD) Sensor5 = 1;// PB1
+    if (ADC_Value[0] < THRESHOLD)// PA5
+    {
+        Sensor1 = 1;
+        CurrentState++;
+    }
+    if (ADC_Value[1] < THRESHOLD)// PA6
+    {
+        Sensor1 = 1;
+        CurrentState++;
+    }
+    if (ADC_Value[2] < THRESHOLD)// PA7
+    {
+        Sensor1 = 1;
+        CurrentState++;
+    }
+    if (ADC_Value[3] < THRESHOLD)// PB0
+    {
+        Sensor1 = 1;
+        CurrentState++;
+    }
+    if (ADC_Value[4] < THRESHOLD)// PB1
+    {
+        Sensor1 = 1;
+        CurrentState++;
+    }
 }
 
 void delay()
@@ -175,14 +197,16 @@ int main() {
     while(1){
     //delay();
     //보드의 버튼을 누르면 총알 발사.
-
-    if (
-        GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_4) == Bit_RESET) { // KEY1을 눌렀을 시,
-        flag = (ADC_Value[0] < THRESHOLD) ? 1: 0;
-        if (flag) { // 조도센서에 레이저가 적중했다면,
+    //PreviousState != Currentstate -> 조도센서에 레이저가 적중했다
+    //적중했다면 PreviousState를 Currentstate값으로 업데이트, 다시 계속 비교
+    //PreviousState == Currentstate -> 조도센서에 레이저가 적중하지 않았다
+    if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_4) == Bit_RESET) // KEY1을 눌렀을 시
+    {
+        if (PreviousState != CurrentState) { // 조도센서에 레이저가 적중했다면,
             TIM_SetCompare2(TIM2, 500); // 50% 듀티 (소리 ON)
+            PreviousState = CurrentState;
         } else { // 빗나갔다면
-        
+            
         }
     } else {
         TIM_SetCompare2(TIM2, 0);   // 듀티 0% (소리 OFF)

@@ -196,26 +196,24 @@ int main() {
         UpdateSensorStates();
     }
 
-    while(1){
-    //delay();
-    //보드의 버튼을 누르면 총알 발사.
-    //PreviousState != Currentstate -> 조도센서에 레이저가 적중했다
-    //적중했다면 PreviousState를 Currentstate값으로 업데이트, 다시 계속 비교
-    //PreviousState == Currentstate -> 조도센서에 레이저가 적중하지 않았다
-    if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_4) == Bit_RESET) // KEY1을 눌렀을 시
+    while(1)
     {
-        if (PreviousState != CurrentState) { // 조도센서에 레이저가 적중했다면,
-            TIM_SetCompare2(TIM2, 500); // 50% 듀티 (소리 ON)
-            PreviousState = CurrentState;
-        } else { // 빗나갔다면
-            
+        //delay();
+        //보드의 버튼을 누르면 총알 발사.
+        //PreviousState != Currentstate -> 조도센서에 레이저가 적중했다
+        //PreviousState == Currentstate -> 조도센서에 레이저가 적중하지 않았다
+        //적중했다면 PreviousState를 Currentstate값으로 업데이트, 다시 계속 비교
+        if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_4) == Bit_RESET) // KEY1을 눌렀을 시
+        {
+            if (PreviousState != CurrentState) { // 조도센서에 레이저가 적중했다면,
+                TIM_SetCompare2(TIM2, 500); // 50% 듀티 (소리 ON)
+                PreviousState = CurrentState;
+            } else { // 빗나갔다면
+                
+            }
+        } else {
+            TIM_SetCompare2(TIM2, 0);   // 듀티 0% (소리 OFF)
         }
-    } else {
-        TIM_SetCompare2(TIM2, 0);   // 듀티 0% (소리 OFF)
-    }
-    /*
-
-    */
     }
     return 0;
 }

@@ -141,29 +141,31 @@ void DMA_Configure(void)
     DMA_Cmd(DMA1_Channel1, ENABLE);
 }
 
+/* 각각 조도센서의 아날로그 값이 처음으로 임계점 아래로 떨어질때만 Sensor 값을 1로 업데이트하고 CurrentState를 1 증가시킴
+   이를 통해 이미 적중시킨 조도센서를 다시 맞춰서 점수를 얻는것을 방지함 */
 void UpdateSensorStates(void) 
 {
-    if (ADC_Value[0] < THRESHOLD)// PA5
+    if (ADC_Value[0] < THRESHOLD && Sensor1 == 0)// PA5
     {
         Sensor1 = 1;
         CurrentState++;
     }
-    if (ADC_Value[1] < THRESHOLD)// PA6
+    if (ADC_Value[1] < THRESHOLD && Sensor2 == 0)// PA6
     {
         Sensor1 = 1;
         CurrentState++;
     }
-    if (ADC_Value[2] < THRESHOLD)// PA7
+    if (ADC_Value[2] < THRESHOLD && Sensor3 == 0)// PA7
     {
         Sensor1 = 1;
         CurrentState++;
     }
-    if (ADC_Value[3] < THRESHOLD)// PB0
+    if (ADC_Value[3] < THRESHOLD && Sensor4 == 0)// PB0
     {
         Sensor1 = 1;
         CurrentState++;
     }
-    if (ADC_Value[4] < THRESHOLD)// PB1
+    if (ADC_Value[4] < THRESHOLD && Sensor5 == 0)// PB1
     {
         Sensor1 = 1;
         CurrentState++;

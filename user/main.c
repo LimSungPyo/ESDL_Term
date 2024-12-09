@@ -15,11 +15,11 @@ volatile uint32_t ADC_Value[5];
 uint32_t THRESHOLD = 3400; // 기준치
 
 /* PA5, PA6, PA7, PB0, PB1 5개의 채널 이용
-   PA5 -> Sensor1
-   PA6 -> Sensor2
-   PA7 -> Sensor3
-   PB0 -> Sensor4
-   PB1 -> Sensor5
+   PA5(ADC_Value[0]) -> Sensor1
+   PA6(ADC_Value[1]) -> Sensor2
+   PA7(ADC_Value[2]) -> Sensor3
+   PB0(ADC_Value[3]) -> Sensor4
+   PB1(ADC_Value[4]) -> Sensor5
    초기에는 Sensor값이 모두 0으로 초기화된 상태
    각각의 조도센서가 레이저를 인식하면 인식한 조도센서의 값이 1로 업데이트됨 */
 int Sensor1 = 0, Sensor2 = 0, Sensor3 = 0, Sensor4 = 0, Sensor5 = 0;

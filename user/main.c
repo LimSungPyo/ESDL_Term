@@ -15,7 +15,7 @@ volatile uint32_t ADC_Value[5];
 uint32_t THRESHOLD = 3400; // 기준치
 
 /* 
-PA5, PA6, PA7, PB0, PB1 5개의 채널 이용
+   PA5, PA6, PA7, PB0, PB1 5개의 채널 이용
    PA5(ADC_Value[0]) -> Sensor1
    PA6(ADC_Value[1]) -> Sensor2
    PA7(ADC_Value[2]) -> Sensor3
@@ -43,30 +43,37 @@ void GPIO_Configure(void)
     GPIO_InitTypeDef GPIO_InitStructure;
     
     // KEY 1 Fire Button
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;             // KEY 1 Fire Butto
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;             // KEY 1 Fire Button (PC4)
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_Init(GPIOC, &GPIO_InitStructure);
     
     // KEY 4 game start Button 
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;             // KEY 4 game start Button 
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;             // KEY 4 game start Button (PA0)
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
     
-    // 조도 센서 핀 설정 (PA5, PA6, PA7, PB0, PB1)
+    // 조도 센서 핀 설정 (PA5, PA6, PA7, PB0, PB1) Analog 핀
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7; // PA5 ~ PA7
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN; // 아날로그 입력
     GPIO_Init(GPIOA, &GPIO_InitStructure);
+    
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1; // PB0 ~ PB1
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN; // 아날로그 입력
     GPIO_Init(GPIOB, &GPIO_InitStructure);
     
-    // PIEZO
+    // PIEZO (TIM2, 채널 2)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;       // 출력, 대체 기능, 푸시풀
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
     
-    // TX (PA9) 설정
+    // 레이저 (TIM3, 채널 1) - PB4 사용
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;              // 레이저 핀 (PB4)
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;         // 대체 기능, 푸시풀
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;       // 속도 설정
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
+    
+        // TX (PA9) 설정
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP; // 대체 기능 푸시풀
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -109,6 +116,33 @@ void ADC_Configure(void)
 
     ADC_SoftwareStartConvCmd(ADC1, ENABLE);
 
+}
+
+// 레이저용 PWM 초기화 (TIM3, 채널 1)
+void LaserShoot_Init(void) {
+    // 레이저를 발사하는 초기화 함수 (예: PWM 신호 설정)
+    // 타이머와 PWM을 설정하는 코드가 여기에 포함됩니다.
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);  // TIM3 클럭 활성화
+
+    TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+    TIM_OCInitTypeDef TIM_OCInitStructure;
+
+    // 기본 타이머 설정
+    TIM_TimeBaseStructure.TIM_Period = 999;       // 자동 리로드 값 (1kHz 주파수)
+    TIM_TimeBaseStructure.TIM_Prescaler = 71;     // 분주비 (1MHz 클럭)
+    TIM_TimeBaseStructure.TIM_ClockDivision = 0;
+    TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+    TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
+
+    // PWM 모드 설정 (채널 1, 50% 듀티)
+    TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+    TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+    TIM_OCInitStructure.TIM_Pulse = 500;          // 듀티 사이클 50% (레이저 발사)
+    TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+    TIM_OC1Init(TIM3, &TIM_OCInitStructure);
+
+    // 타이머 활성화
+    TIM_Cmd(TIM3, ENABLE);
 }
 
 // PIEZO용 PWM 초기화 함수 (TIM2, 채널 2)
@@ -177,28 +211,32 @@ void USART_Configure(void) {
    이를 통해 이미 적중시킨 조도센서를 다시 맞춰서 점수를 얻는것을 방지함 */
 void UpdateSensorStates(void) 
 {
-    if (ADC_Value[0] < THRESHOLD && Sensor1 == 0) {
+    if (ADC_Value[0] < THRESHOLD && Sensor1 == 0)// PA5
+    {
         Sensor1 = 1;
         CurrentState++;
     }
-    if (ADC_Value[1] < THRESHOLD && Sensor2 == 0) {
+    if (ADC_Value[1] < THRESHOLD && Sensor2 == 0)// PA6
+    {
         Sensor2 = 1;
         CurrentState++;
     }
-    if (ADC_Value[2] < THRESHOLD && Sensor3 == 0) {
+    if (ADC_Value[2] < THRESHOLD && Sensor3 == 0)// PA7
+    {
         Sensor3 = 1;
         CurrentState++;
     }
-    if (ADC_Value[3] < THRESHOLD && Sensor4 == 0) {
+    if (ADC_Value[3] < THRESHOLD && Sensor4 == 0)// PB0
+    {
         Sensor4 = 1;
         CurrentState++;
     }
-    if (ADC_Value[4] < THRESHOLD && Sensor5 == 0) {
+    if (ADC_Value[4] < THRESHOLD && Sensor5 == 0)// PB1
+    {
         Sensor5 = 1;
         CurrentState++;
     }
 }
-
 
 void delay()
 {
@@ -215,6 +253,11 @@ void SendData(uint16_t data)
     while ((USART1->SR & USART_SR_TC) == 0);
 }
 
+void SendString(const char *str) {
+  while(*str) {
+    SendData(*str++);
+  }
+}
 
 int main() {
 
@@ -224,44 +267,77 @@ int main() {
     ADC_Configure();
     DMA_Configure();
     PWM_Init_Config();   // PWM 초기화
-    USART1_Init();
+    LaserShoot_Init();
+    USART_Configure();
 
     int bullet =  5;
-    int start = 0;
-    while(1) 
+    int point = 0;
+    while(1)
     {
-        // TIM2 채널2의 출력 비교값을 0으로 설정합니다.
-        TIM_SetCompare2(TIM2, 0);   // 듀티 0% (소리 OFF) 상태로 설정
-        // GPIO포트 A의 핀0번이 LOW상태인지 확인 -> 맞으면 게임 start
+      bullet=5;
+      point = 0;
+      if(point == 0){
+        SendString(" 0\r\n");
+      } else if (point == 100) {
+        SendString(" 100\r\n");
+      } else {
+        SendString(" ");
+        SendData(point/10 + 48);
+        SendString("0\r\n");
+      }
+
+      //start, key4
+      while(1) 
+      {   
+        TIM_SetCompare2(TIM2, 0);   // 듀티 0% (소리 OFF)
         if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0) == Bit_RESET){
             char msg_start[] = "Game Start\r\n";
             for (int i = 0; i < sizeof(msg_start); i++) {
                 SendData(msg_start[i]);
             } 
             break;
-        } 
-        // 아니라면 센터의 상태를 update
-        UpdateSensorStates();
-    }
-
-    while(1)
-    {
-        // delay();
-        // KEY1을 눌렀을 시 -> 총알 발사
-        if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_4) == Bit_RESET) 
-        {
-        // PreviousState != Currentstate -> 조도센서에 레이저가 적중했다
-        // PreviousState == Currentstate -> 조도센서에 레이저가 적중하지 않았다
-        // 적중했다면 PreviousState를 Currentstate값으로 업데이트, 다시 계속 비교
-            if (PreviousState != CurrentState) { // 조도센서에 레이저가 적중했다면,
-                TIM_SetCompare2(TIM2, 500); // 50% 듀티 (소리 ON)
-                PreviousState = CurrentState;
-            } else { // 빗나갔다면
-                
-            }
-        } else {
-            TIM_SetCompare2(TIM2, 0);   // 듀티 0% (소리 OFF)
         }
+      }
+      //gaming
+      while(1)
+      {
+          delay();
+          //보드의 버튼을 누르면 총알 발사.
+          //PreviousState != Currentstate -> 조도센서에 레이저가 적중했다
+          //PreviousState == Currentstate -> 조도센서에 레이저가 적중하지 않았다
+          //적중했다면 PreviousState를 Currentstate값으로 업데이트, 다시 계속 비교
+          if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_4) == Bit_RESET) // KEY1을 눌렀을 시
+          {
+              SendString("fired\r\n");
+              TIM_SetCompare1(TIM3, 500); // 레이저 발사
+              UpdateSensorStates();
+              SendString("sensed\r\n");
+              if (PreviousState != CurrentState) { // 조도센서에 레이저가 적중했다면,
+                  SendString("if case\r\n");
+                  point += 20;
+                  TIM_SetCompare2(TIM2, 500); // 50% 듀티 (소리 ON)
+                  PreviousState = CurrentState;
+              } else { // 빗나갔다면
+                  
+              }
+              bullet--;
+              delay();
+          } else {
+              TIM_SetCompare2(TIM2, 0);   // 듀티 0% (소리 OFF)
+              TIM_SetCompare1(TIM3, 0); // 레이저 0% (레이저 OFF)
+          }
+          if(bullet == 0){
+            if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0) == Bit_RESET){
+              char msg_end[] = " Finish\r\n";
+              for (int i = 0; i < sizeof(msg_end); i++) {
+                  SendData(msg_end[i]);
+              }
+              SendData(point);
+              break;
+            }
+            break;
+          }     
+      }
     }
     return 0;
 }

@@ -12,7 +12,7 @@ uint32_t flag = 0;
 uint32_t light;
 uint16_t value = 0;
 volatile uint32_t ADC_Value[5];
-uint32_t THRESHOLD = 3400; // 기준치
+uint32_t THRESHOLD = 3600; // 기준치
 
 /* 
    PA5, PA6, PA7, PB0, PB1 5개의 채널 이용
@@ -145,7 +145,7 @@ void LaserShoot_Init(void) {
     TIM_Cmd(TIM3, ENABLE);
 }
 
-// PIEZO용 PWM 초기화 함수 (TIM2, 채널 2)
+// PWM 초기화 함수 (TIM2, 채널 2)
 void PWM_Init_Config(void) {
     // TIM2 클럭 활성화
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
@@ -163,13 +163,14 @@ void PWM_Init_Config(void) {
     // PWM 모드 설정 (채널 2, 50% 듀티)
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
     TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-    TIM_OCInitStructure.TIM_Pulse = 500;          // 100% 듀티 사이클
+    TIM_OCInitStructure.TIM_Pulse = 500;          // 50% 듀티 사이클
     TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
     TIM_OC2Init(TIM2, &TIM_OCInitStructure);
 
     // 타이머 활성화
     TIM_Cmd(TIM2, ENABLE);
 }
+
 
 void DMA_Configure(void)
 {
@@ -260,7 +261,6 @@ void SendString(const char *str) {
 }
 
 int main() {
-
     SystemInit();
     RCC_Configure();
     GPIO_Configure();     // GPIO 클럭 초기화
@@ -276,22 +276,13 @@ int main() {
     {
       bullet=5;
       point = 0;
-      if(point == 0){
-        SendString(" 0\r\n");
-      } else if (point == 100) {
-        SendString(" 100\r\n");
-      } else {
-        SendString(" ");
-        SendData(point/10 + 48);
-        SendString("0\r\n");
-      }
 
       //start, key4
       while(1) 
       {   
         TIM_SetCompare2(TIM2, 0);   // 듀티 0% (소리 OFF)
         if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0) == Bit_RESET){
-            char msg_start[] = "Game Start\r\n";
+            char msg_start[] = "===========[Game Start]===========\r\n";
             for (int i = 0; i < sizeof(msg_start); i++) {
                 SendData(msg_start[i]);
             } 
@@ -301,17 +292,16 @@ int main() {
       //gaming
       while(1)
       {
-          delay();
           //보드의 버튼을 누르면 총알 발사.
           //PreviousState != Currentstate -> 조도센서에 레이저가 적중했다
           //PreviousState == Currentstate -> 조도센서에 레이저가 적중하지 않았다
           //적중했다면 PreviousState를 Currentstate값으로 업데이트, 다시 계속 비교
           if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_4) == Bit_RESET) // KEY1을 눌렀을 시
           {
-              SendString("fired\r\n");
+              TIM_SetCompare2(TIM2, 500);
+              SendString("===========[Fired]===========\r\n");
               TIM_SetCompare1(TIM3, 500); // 레이저 발사
               UpdateSensorStates();
-              SendString("sensed\r\n");
               if (PreviousState != CurrentState) { // 조도센서에 레이저가 적중했다면,
                   SendString("if case\r\n");
                   point += 20;
@@ -327,14 +317,19 @@ int main() {
               TIM_SetCompare1(TIM3, 0); // 레이저 0% (레이저 OFF)
           }
           if(bullet == 0){
-            if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0) == Bit_RESET){
-              char msg_end[] = " Finish\r\n";
+              char msg_end[] = " ===========[Finish]===========\r\n";
               for (int i = 0; i < sizeof(msg_end); i++) {
                   SendData(msg_end[i]);
               }
-              SendData(point);
-              break;
-            }
+              if(point == 0){
+                SendString(" 0\r\n");
+              } else if (point == 100) {
+                SendString(" 100\r\n");
+              } else {
+                SendString(" ");
+                SendData(point/10 + 48);
+                SendString("0\r\n");
+              }
             break;
           }     
       }

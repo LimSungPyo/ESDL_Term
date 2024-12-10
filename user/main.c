@@ -188,7 +188,6 @@ int main() {
     PWM_Init_Config();   // PWM 초기화
 
     int bullet =  5;
-    int start = 0;
     while(1) 
     {
         TIM_SetCompare2(TIM2, 0);   // 듀티 0% (소리 OFF)
@@ -198,7 +197,7 @@ int main() {
 
     while(1)
     {
-        //delay();
+        delay();
         //보드의 버튼을 누르면 총알 발사.
         //PreviousState != Currentstate -> 조도센서에 레이저가 적중했다
         //PreviousState == Currentstate -> 조도센서에 레이저가 적중하지 않았다
@@ -211,6 +210,8 @@ int main() {
             } else { // 빗나갔다면
                 
             }
+            bullet--;
+            delay();
         } else {
             TIM_SetCompare2(TIM2, 0);   // 듀티 0% (소리 OFF)
         }

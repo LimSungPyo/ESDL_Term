@@ -192,12 +192,12 @@ int main() {
     {
         TIM_SetCompare2(TIM2, 0);   // 듀티 0% (소리 OFF)
         if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0) == Bit_RESET) break;
-        UpdateSensorStates();
     }
 
     while(1)
     {
         delay();
+        UpdateSensorStates();
         //보드의 버튼을 누르면 총알 발사.
         //PreviousState != Currentstate -> 조도센서에 레이저가 적중했다
         //PreviousState == Currentstate -> 조도센서에 레이저가 적중하지 않았다

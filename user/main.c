@@ -261,6 +261,10 @@ void UpdateSensorStates(void)
     }
 }
 
+void LEDInit()
+{
+    GPIO_SetBits(GPIOD, GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12);
+}
 
 void delay()
 {
@@ -293,6 +297,7 @@ int main() {
     PWM_Init_Config();   // PWM 초기화
     LaserShoot_Init();
     USART_Configure();
+    LED_Init();
 
     int bullet =  5;
     int point = 0;

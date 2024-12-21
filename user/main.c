@@ -7,12 +7,13 @@
 #include "stm32f10x_adc.h"
 #include "stm32f10x_dma.h"
 #include "stm32f10x_tim.h"
+#include "stm32f10x_exti.h"
 
 uint32_t flag = 0;
 uint32_t light;
 uint16_t value = 0;
 volatile uint32_t ADC_Value[5];
-uint32_t THRESHOLD = 3600; // 기준치
+uint32_t THRESHOLD = 3980; // 기준치
 
 /* 
    PA5, PA6, PA7, PB0, PB1 5개의 채널 이용
@@ -33,9 +34,11 @@ void RCC_Configure(void)
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE); // GPIOA 클럭 활성화 : PIEZO, Start Button
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE); // GPIOB 클럭 활성화 : Analog Pin
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE); // GPIOC 클럭 활성화 : Fire Button
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD, ENABLE); // LED
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE); // USART1 클럭 활성화
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE); //AFIO기능 사용 -> GPIO를 외부 인터럽트로 사용
 }
 
 void GPIO_Configure(void)
@@ -67,13 +70,7 @@ void GPIO_Configure(void)
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
     
-    // 레이저 (TIM3, 채널 1) - PB4 사용
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;              // 레이저 핀 (PB4)
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;         // 대체 기능, 푸시풀
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;       // 속도 설정
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
-    
-        // TX (PA9) 설정
+    // TX (PA9) 설정
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP; // 대체 기능 푸시풀
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -81,8 +78,17 @@ void GPIO_Configure(void)
     
     // RX (PA10) 설정
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING; // 입력 모드
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU; // 입력 모드
+    //MODE_IN_FLOATING -> 외부 회로에 의존된 상태
+    //외부 회로로 신호 안정성이 보장되는 경우 사용한다고 함.
     GPIO_Init(GPIOA, &GPIO_InitStructure);
+    
+    //LED
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12; // PD8 ~ PD12
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIO_Init(GPIOD, &GPIO_InitStructure);
+    GPIO_SetBits(GPIOD, GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12);
 }
 
 void ADC_Configure(void) 
@@ -118,6 +124,31 @@ void ADC_Configure(void)
 
 }
 
+//USART의 인터럽트 관련 우선순위 설정정
+void NVIC_Configure(void) {
+
+    NVIC_InitTypeDef NVIC_InitStructure;
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
+
+    // USART1, PC
+    // 'NVIC_EnableIRQ' is only required for USART setting
+    NVIC_EnableIRQ(USART1_IRQn);
+    NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+
+    // USART2, Bluetooth
+    // 'NVIC_EnableIRQ' is only required for USART setting
+    NVIC_EnableIRQ(USART2_IRQn);
+    NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+}
+
 // 레이저용 PWM 초기화 (TIM3, 채널 1)
 void LaserShoot_Init(void) {
     // 레이저를 발사하는 초기화 함수 (예: PWM 신호 설정)
@@ -137,7 +168,7 @@ void LaserShoot_Init(void) {
     // PWM 모드 설정 (채널 1, 50% 듀티)
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
     TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-    TIM_OCInitStructure.TIM_Pulse = 500;          // 듀티 사이클 50% (레이저 발사)
+    TIM_OCInitStructure.TIM_Pulse = 999;          // 듀티 사이클 50% (레이저 발사)
     TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
     TIM_OC1Init(TIM3, &TIM_OCInitStructure);
 
@@ -195,48 +226,100 @@ void DMA_Configure(void)
 }
 
 void USART_Configure(void) {
-    USART_InitTypeDef USART_InitStructure;
+    USART_InitTypeDef USART1_InitStructure;
+    USART_Cmd(USART1, ENABLE);
+    USART1_InitStructure.USART_BaudRate = 9600; // 보드레이트: 9600
+    USART1_InitStructure.USART_WordLength = USART_WordLength_8b; // 데이터 비트: 8비트
+    USART1_InitStructure.USART_StopBits = USART_StopBits_1; // 스탑 비트: 1비트
+    USART1_InitStructure.USART_Parity = USART_Parity_No; // 패리티 없음
+    USART1_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx; // 송수신 모드 활성화
+    USART1_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None; // 플로우 제어 없음
+    USART_Init(USART1, &USART1_InitStructure);
+    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
 
-    USART_InitStructure.USART_BaudRate = 9600; // 보드레이트: 9600
-    USART_InitStructure.USART_WordLength = USART_WordLength_8b; // 데이터 비트: 8비트
-    USART_InitStructure.USART_StopBits = USART_StopBits_1; // 스탑 비트: 1비트
-    USART_InitStructure.USART_Parity = USART_Parity_No; // 패리티 없음
-    USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx; // 송수신 모드 활성화
-    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None; // 플로우 제어 없음
-
-    USART_Init(USART1, &USART_InitStructure);
-    USART_Cmd(USART1, ENABLE); // USART 활성화
+    USART_InitTypeDef USART2_InitStructure;
+    USART_Cmd(USART2, ENABLE);
+    USART2_InitStructure.USART_BaudRate = 9600;
+    USART2_InitStructure.USART_WordLength = USART_WordLength_8b;
+    USART2_InitStructure.USART_StopBits =USART_StopBits_1;
+    USART2_InitStructure.USART_Parity =USART_Parity_No;
+    USART2_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+    USART2_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+    USART_Init(USART2, &USART2_InitStructure);
+    USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
 }
+
 
 /* 각각 조도센서의 아날로그 값이 처음으로 임계점 아래로 떨어질때만 Sensor 값을 1로 업데이트하고 CurrentState를 1 증가시킴
    이를 통해 이미 적중시킨 조도센서를 다시 맞춰서 점수를 얻는것을 방지함 */
 void UpdateSensorStates(void) 
 {
-    if (ADC_Value[0] < THRESHOLD && Sensor1 == 0)// PA5
+    GPIO_InitTypeDef GPIO_InitStructure;
+
+    // PA5 - Sensor1
+    if (ADC_Value[0] < THRESHOLD && Sensor1 == 0) 
     {
         Sensor1 = 1;
         CurrentState++;
+        GPIO_ResetBits(GPIOD, GPIO_Pin_8);
     }
-    if (ADC_Value[1] < THRESHOLD && Sensor2 == 0)// PA6
+
+    // PA6 - Sensor2
+    if (ADC_Value[1] < THRESHOLD && Sensor2 == 0) 
     {
         Sensor2 = 1;
         CurrentState++;
+        GPIO_ResetBits(GPIOD, GPIO_Pin_9);
     }
-    if (ADC_Value[2] < THRESHOLD && Sensor3 == 0)// PA7
+
+    // PA7 - Sensor3
+    if (ADC_Value[2] < THRESHOLD && Sensor3 == 0) 
     {
         Sensor3 = 1;
         CurrentState++;
+        GPIO_ResetBits(GPIOD, GPIO_Pin_10);
     }
-    if (ADC_Value[3] < THRESHOLD && Sensor4 == 0)// PB0
+
+    // PB0 - Sensor4
+    if (ADC_Value[3] < THRESHOLD && Sensor4 == 0) 
     {
         Sensor4 = 1;
         CurrentState++;
+        GPIO_ResetBits(GPIOD, GPIO_Pin_11);
     }
-    if (ADC_Value[4] < THRESHOLD && Sensor5 == 0)// PB1
+
+    // PB1 - Sensor5
+    if (ADC_Value[4] < THRESHOLD && Sensor5 == 0) 
     {
         Sensor5 = 1;
         CurrentState++;
+        GPIO_ResetBits(GPIOD, GPIO_Pin_12);
     }
+}
+
+void LEDInit()
+{
+    GPIO_SetBits(GPIOD, GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12);
+}
+
+void USART1_IRQHandler() {
+  uint16_t word;
+  if(USART_GetITStatus(USART1,USART_IT_RXNE)!=RESET){
+    word = USART_ReceiveData(USART1);
+
+    USART_SendData(USART2,word);
+    USART_ClearITPendingBit(USART1,USART_IT_RXNE);
+  }
+}
+
+void USART2_IRQHandler() {
+  uint16_t word;
+  if(USART_GetITStatus(USART2,USART_IT_RXNE)!=RESET){
+    word = USART_ReceiveData(USART2);
+
+    USART_SendData(USART1,word);
+    USART_ClearITPendingBit(USART2,USART_IT_RXNE);
+  }
 }
 
 void delay()
@@ -247,11 +330,17 @@ void delay()
 
 void SendData(uint16_t data) 
 {
-    /* Transmit Data */
+    /* USART1에 데이터 전송 */
     USART1->DR = data;
 
     /* 전송이 완료되면 해제 */
     while ((USART1->SR & USART_SR_TC) == 0);
+
+    /* USART2에 데이터 전송 (블루투스 모듈) */
+    //USART2->DR = data;
+
+    /* 전송이 완료되면 해제 */
+    //while ((USART2->SR & USART_SR_TC) == 0);
 }
 
 void SendString(const char *str) {
@@ -269,7 +358,9 @@ int main() {
     PWM_Init_Config();   // PWM 초기화
     LaserShoot_Init();
     USART_Configure();
-
+    NVIC_Configure();
+    GPIO_SetBits(GPIOB, GPIO_Pin_4); // PB4를 Low로 설정하여 레이저 끄기 (ResetBits)
+    
     int bullet =  5;
     int point = 0;
     while(1)
@@ -290,17 +381,20 @@ int main() {
         }
       }
       //gaming
+      LEDInit();
       while(1)
       {
+          //GPIO_ResetBits(GPIOB, GPIO_Pin_4); // PB4를 Low로 설정하여 레이저 끄기 (ResetBits)
           //보드의 버튼을 누르면 총알 발사.
           //PreviousState != Currentstate -> 조도센서에 레이저가 적중했다
           //PreviousState == Currentstate -> 조도센서에 레이저가 적중하지 않았다
           //적중했다면 PreviousState를 Currentstate값으로 업데이트, 다시 계속 비교
           if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_4) == Bit_RESET) // KEY1을 눌렀을 시
           {
+              GPIO_SetBits(GPIOB, GPIO_Pin_4); // PB4를 High로 설정하여 레이저 발사 (SetBits)
               TIM_SetCompare2(TIM2, 500);
               SendString("===========[Fired]===========\r\n");
-              TIM_SetCompare1(TIM3, 500); // 레이저 발사
+              //TIM_SetCompare1(TIM3, 999); // 레이저 발사
               UpdateSensorStates();
               if (PreviousState != CurrentState) { // 조도센서에 레이저가 적중했다면,
                   SendString("if case\r\n");
@@ -314,7 +408,8 @@ int main() {
               delay();
           } else {
               TIM_SetCompare2(TIM2, 0);   // 듀티 0% (소리 OFF)
-              TIM_SetCompare1(TIM3, 0); // 레이저 0% (레이저 OFF)
+              //TIM_SetCompare1(TIM3, 0); // 레이저 0% (레이저 OFF)
+              GPIO_ResetBits(GPIOB, GPIO_Pin_4); // PB4를 Low로 설정하여 레이저 끄기 (ResetBits)
           }
           if(bullet == 0){
               char msg_end[] = " ===========[Finish]===========\r\n";

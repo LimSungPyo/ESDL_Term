@@ -38,6 +38,7 @@ void RCC_Configure(void)
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE); // USART1 클럭 활성화
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE); // USART2 클럭 활성화
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE); //AFIO기능 사용 -> GPIO를 외부 인터럽트로 사용
 }
 
@@ -82,6 +83,19 @@ void GPIO_Configure(void)
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU; // 입력 모드
     //MODE_IN_FLOATING -> 외부 회로에 의존된 상태
     //외부 회로로 신호 안정성이 보장되는 경우 사용한다고 함.
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    
+    /* USART2 pin setting */
+    //TX
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+    //RX
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
     
     //LED
@@ -337,15 +351,17 @@ void SendData(uint16_t data)
     while ((USART1->SR & USART_SR_TC) == 0);
 
     /* USART2에 데이터 전송 (블루투스 모듈) */
-    //USART2->DR = data;
+    USART2->DR = data;
 
     /* 전송이 완료되면 해제 */
-    //while ((USART2->SR & USART_SR_TC) == 0);
+    while ((USART2->SR & USART_SR_TC) == 0);
 }
 
 void SendString(const char *str) {
   while(*str) {
-    SendData(*str++);
+    if(*str != '\0'){
+      SendData(*str++);
+    }
   }
 }
 

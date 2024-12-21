@@ -33,6 +33,7 @@ void RCC_Configure(void)
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE); // GPIOA 클럭 활성화 : PIEZO, Start Button
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE); // GPIOB 클럭 활성화 : Analog Pin
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE); // GPIOC 클럭 활성화 : Fire Button
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD, ENABLE); // LED
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE); // USART1 클럭 활성화
@@ -57,25 +58,25 @@ void GPIO_Configure(void)
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN; // 아날로그 입력
     GPIO_Init(GPIOA, &GPIO_InitStructure);
     
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1; // PB0 ~ PB1
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN; // 아날로그 입력
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1;  // PB0 ~ PB1
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;           // 아날로그 입력
     GPIO_Init(GPIOB, &GPIO_InitStructure);
     
     // PIEZO (TIM2, 채널 2)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;       // 출력, 대체 기능, 푸시풀
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;         // 출력, 대체 기능, 푸시풀
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
     
     // 레이저 (TIM3, 채널 1) - PB4 사용
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;              // 레이저 핀 (PB4)
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;               // 레이저 핀 (PB4)
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;         // 대체 기능, 푸시풀
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;       // 속도 설정
     GPIO_Init(GPIOB, &GPIO_InitStructure);
     
-        // TX (PA9) 설정
+    // TX (PA9) 설정
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP; // 대체 기능 푸시풀
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;         // 대체 기능 푸시풀
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
     
@@ -83,6 +84,12 @@ void GPIO_Configure(void)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING; // 입력 모드
     GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+    //LED
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12; // PD8 ~ PD12
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+    GPIO_Init(GPIOD, &GPIO_InitStructure);
+    GPIO_SetBits(GPIOD, GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12);
 }
 
 void ADC_Configure(void) 
@@ -171,7 +178,6 @@ void PWM_Init_Config(void) {
     TIM_Cmd(TIM2, ENABLE);
 }
 
-
 void DMA_Configure(void)
 {
     DMA_InitTypeDef DMA_Instructure;
@@ -212,32 +218,49 @@ void USART_Configure(void) {
    이를 통해 이미 적중시킨 조도센서를 다시 맞춰서 점수를 얻는것을 방지함 */
 void UpdateSensorStates(void) 
 {
-    if (ADC_Value[0] < THRESHOLD && Sensor1 == 0)// PA5
+    GPIO_InitTypeDef GPIO_InitStructure;
+
+    // PA5 - Sensor1
+    if (ADC_Value[0] < THRESHOLD && Sensor1 == 0) 
     {
         Sensor1 = 1;
         CurrentState++;
+        GPIO_ResetBits(GPIOD, GPIO_Pin_8);
     }
-    if (ADC_Value[1] < THRESHOLD && Sensor2 == 0)// PA6
+
+    // PA6 - Sensor2
+    if (ADC_Value[1] < THRESHOLD && Sensor2 == 0) 
     {
         Sensor2 = 1;
         CurrentState++;
+        GPIO_ResetBits(GPIOD, GPIO_Pin_9);
     }
-    if (ADC_Value[2] < THRESHOLD && Sensor3 == 0)// PA7
+
+    // PA7 - Sensor3
+    if (ADC_Value[2] < THRESHOLD && Sensor3 == 0) 
     {
         Sensor3 = 1;
         CurrentState++;
+        GPIO_ResetBits(GPIOD, GPIO_Pin_10);
     }
-    if (ADC_Value[3] < THRESHOLD && Sensor4 == 0)// PB0
+
+    // PB0 - Sensor4
+    if (ADC_Value[3] < THRESHOLD && Sensor4 == 0) 
     {
         Sensor4 = 1;
         CurrentState++;
+        GPIO_ResetBits(GPIOD, GPIO_Pin_11);
     }
-    if (ADC_Value[4] < THRESHOLD && Sensor5 == 0)// PB1
+
+    // PB1 - Sensor5
+    if (ADC_Value[4] < THRESHOLD && Sensor5 == 0) 
     {
         Sensor5 = 1;
         CurrentState++;
+        GPIO_ResetBits(GPIOD, GPIO_Pin_12);
     }
 }
+
 
 void delay()
 {

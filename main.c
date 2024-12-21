@@ -1,3 +1,10 @@
+/*수정된부분 
+GPIO_Configure USART2 부분 추가
+USART_Configure -> USART1_Configure (이름변경)
+USAART2_Configure 추가(블루투스 연결)
+SendData, SendString 함수 블루투스 출력 추가가
+*/
+
 
 #include "stm32f10x.h"
 #include "core_cm3.h"
@@ -347,7 +354,7 @@ int main() {
     DMA_Configure();
     PWM_Init_Config();   // PWM 초기화
     LaserShoot_Init();
-    USART_Configure();
+    USART1_Configure();
     USART2_Configure(); // 블루투스 USART 초기화
 
     int bullet =  5;

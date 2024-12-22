@@ -15,7 +15,7 @@ uint16_t value = 0;
 volatile uint32_t ADC_Value[5];
 uint32_t THRESHOLD = 3980; // 기준치
 
-SendData();
+void SendData();
 
 /* 
    PA5, PA6, PA7, PB0, PB1 5개의 채널 이용

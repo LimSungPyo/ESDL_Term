@@ -138,7 +138,7 @@ void ADC_Configure(void)
 
 }
 
-//USART의 인터럽트 관련 우선순위 설정정
+//USART의 인터럽트 관련 우선순위 설정
 void NVIC_Configure(void) {
 
     NVIC_InitTypeDef NVIC_InitStructure;

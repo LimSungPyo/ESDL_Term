@@ -383,7 +383,7 @@ int main() {
     {
       bullet=5;
       point = 0;
-
+      PreviousState = 0, CurrentState = 0;
       //start, key4
       while(1) 
       {   

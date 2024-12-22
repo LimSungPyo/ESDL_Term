@@ -407,7 +407,7 @@ int main() {
         TIM_SetCompare2(TIM2, 0);   // 듀티 0% (소리 OFF)
         if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0) == Bit_RESET){
             char msg_start[] = "===========[Game Start]===========\r\n";
-            for (int i = 0; i < sizeof(msg_start); i++) {
+            for (int i = 0; i < sizeof(msg_start)-1; i++) {
                 SendData(msg_start[i]);
             } 
             break;
@@ -446,7 +446,7 @@ int main() {
           }
           if(bullet == 0){
               char msg_end[] = " ===========[Finish]===========\r\n";
-              for (int i = 0; i < sizeof(msg_end); i++) {
+              for (int i = 0; i < sizeof(msg_end)-1; i++) {
                   SendData(msg_end[i]);
               }
               if(point == 0){

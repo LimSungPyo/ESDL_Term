@@ -13,9 +13,12 @@ uint32_t flag = 0;
 uint32_t light;
 uint16_t value = 0;
 volatile uint32_t ADC_Value[5];
-uint32_t THRESHOLD = 3980; // 기준치
+uint32_t THRESHOLD1 = 4050; // 기준치
+uint32_t THRESHOLD2 = 4050; // 기준치
+uint32_t THRESHOLD3 = 4050; // 기준치
+uint32_t THRESHOLD4 = 4050; // 기준치
+uint32_t THRESHOLD5 = 4050; // 기준치
 
-void SendData();
 
 /* 
    PA5, PA6, PA7, PB0, PB1 5개의 채널 이용
@@ -265,64 +268,6 @@ void USART_Configure(void) {
     USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
 }
 
-
-/* 각각 조도센서의 아날로그 값이 처음으로 임계점 아래로 떨어질때만 Sensor 값을 1로 업데이트하고 CurrentState를 1 증가시킴
-   이를 통해 이미 적중시킨 조도센서를 다시 맞춰서 점수를 얻는것을 방지함 */
-void UpdateSensorStates(void) 
-{
-    GPIO_InitTypeDef GPIO_InitStructure;
-
-    // PA5 - Sensor1
-    if (ADC_Value[0] < THRESHOLD && Sensor1 == 0) 
-    {
-        SendData(ADC_Value[0]);
-        Sensor1 = 1;
-        CurrentState++;
-        GPIO_ResetBits(GPIOD, GPIO_Pin_8);
-        return;
-    }
-
-    // PA6 - Sensor2
-    if (ADC_Value[1] < THRESHOLD && Sensor2 == 0) 
-    {
-        SendData(ADC_Value[1]);
-        Sensor2 = 1;
-        CurrentState++;
-        GPIO_ResetBits(GPIOD, GPIO_Pin_9);
-        return;
-    }
-
-    // PA7 - Sensor3
-    if (ADC_Value[2] < THRESHOLD && Sensor3 == 0) 
-    {
-        SendData(ADC_Value[2]);
-        Sensor3 = 1;
-        CurrentState++;
-        GPIO_ResetBits(GPIOD, GPIO_Pin_10);
-        return;
-    }
-
-    // PB0 - Sensor4
-    if (ADC_Value[3] < THRESHOLD && Sensor4 == 0) 
-    {
-        SendData(ADC_Value[3]);
-        Sensor4 = 1;
-        CurrentState++;
-        GPIO_ResetBits(GPIOD, GPIO_Pin_11);
-        return;
-    }
-
-    // PB1 - Sensor5
-    if (ADC_Value[4] < THRESHOLD && Sensor5 == 0) 
-    {
-        SendData(ADC_Value[4]);
-        Sensor5 = 1;
-        CurrentState++;
-        GPIO_ResetBits(GPIOD, GPIO_Pin_12);
-        return;
-    }
-}
-
 void LEDInit()
 {
     GPIO_SetBits(GPIOD, GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12);
@@ -381,6 +326,94 @@ void SendString(const char *str) {
       SendData(*str++);
     }
   }
+}
+
+void SendInt(int tmp_val){
+        SendString(" ");
+        SendData(tmp_val%10 + 48);
+        tmp_val = tmp_val/10;
+        SendData(tmp_val%10 + 48);
+        tmp_val = tmp_val/10;
+        SendData(tmp_val%10 + 48);
+        tmp_val = tmp_val/10;
+        SendData(tmp_val%10 + 48);
+        SendString("\r\n");
+}
+
+/* 각각 조도센서의 아날로그 값이 처음으로 임계점 아래로 떨어질때만 Sensor 값을 1로 업데이트하고 CurrentState를 1 증가시킴
+   이를 통해 이미 적중시킨 조도센서를 다시 맞춰서 점수를 얻는것을 방지함 */
+void UpdateSensorStates(void) 
+{
+    // PA5 - Sensor1
+    if (ADC_Value[0] < THRESHOLD1 && Sensor1 == 0) 
+    {
+        SendInt(ADC_Value[0]);
+        SendInt(ADC_Value[1]);
+        SendInt(ADC_Value[2]);
+        SendInt(ADC_Value[3]);
+        SendInt(ADC_Value[4]);
+        Sensor1 = 1;
+        CurrentState++;
+        GPIO_ResetBits(GPIOD, GPIO_Pin_8);
+        return;
+    }
+
+    // PA6 - Sensor2
+    if (ADC_Value[1] < THRESHOLD2 && Sensor2 == 0) 
+    {
+        SendInt(ADC_Value[0]);
+        SendInt(ADC_Value[1]);
+        SendInt(ADC_Value[2]);
+        SendInt(ADC_Value[3]);
+        SendInt(ADC_Value[4]);
+
+        Sensor2 = 1;
+        CurrentState++;
+        GPIO_ResetBits(GPIOD, GPIO_Pin_9);
+        return;
+    }
+
+    // PA7 - Sensor3
+    if (ADC_Value[2] < THRESHOLD3 && Sensor3 == 0) 
+    {
+        SendInt(ADC_Value[0]);
+        SendInt(ADC_Value[1]);
+        SendInt(ADC_Value[2]);
+        SendInt(ADC_Value[3]);
+        SendInt(ADC_Value[4]);
+        Sensor3 = 1;
+        CurrentState++;
+        GPIO_ResetBits(GPIOD, GPIO_Pin_10);
+        return;
+    }
+
+    // PB0 - Sensor4
+    if (ADC_Value[3] < THRESHOLD4 && Sensor4 == 0) 
+    {
+        SendInt(ADC_Value[0]);
+        SendInt(ADC_Value[1]);
+        SendInt(ADC_Value[2]);
+        SendInt(ADC_Value[3]);
+        SendInt(ADC_Value[4]);
+        Sensor4 = 1;
+        CurrentState++;
+        GPIO_ResetBits(GPIOD, GPIO_Pin_11);
+        return;
+    }
+
+    // PB1 - Sensor5
+    if (ADC_Value[4] < THRESHOLD5 && Sensor5 == 0) 
+    {
+        SendInt(ADC_Value[0]);
+        SendInt(ADC_Value[1]);
+        SendInt(ADC_Value[2]);
+        SendInt(ADC_Value[3]);
+        SendInt(ADC_Value[4]);
+        Sensor5 = 1;
+        CurrentState++;
+        GPIO_ResetBits(GPIOD, GPIO_Pin_12);
+        return;
+    }
 }
 
 int main() {

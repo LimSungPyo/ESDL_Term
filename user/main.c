@@ -314,6 +314,12 @@ void UpdateSensorStates(void)
 void LEDInit()
 {
     GPIO_SetBits(GPIOD, GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12);
+    PreviousState = 0, CurrentState = 0;
+    Sensor1 = 0;
+    Sensor2 = 0;
+    Sensor3 = 0;
+    Sensor4 = 0;
+    Sensor5 = 0;
 }
 
 void USART1_IRQHandler() {
@@ -383,7 +389,6 @@ int main() {
     {
       bullet=5;
       point = 0;
-      PreviousState = 0, CurrentState = 0;
       //start, key4
       while(1) 
       {   

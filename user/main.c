@@ -441,7 +441,7 @@ int main() {
     ADC_Configure();
     DMA_Configure();
     PWM_Init_Config();   // PWM 초기화
-    LaserShoot_Init();
+    //LaserShoot_Init();
     USART_Configure();
     NVIC_Configure();
     GPIO_SetBits(GPIOB, GPIO_Pin_4); // PB4를 Low로 설정하여 레이저 끄기 (ResetBits)

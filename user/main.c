@@ -168,6 +168,8 @@ void NVIC_Configure(void) {
     NVIC_Init(&NVIC_InitStructure);
 }
 
+/*
+
 // 레이저용 PWM 초기화 (TIM3, 채널 1)
 void LaserShoot_Init(void) {
     // 레이저를 발사하는 초기화 함수 (예: PWM 신호 설정)
@@ -195,6 +197,7 @@ void LaserShoot_Init(void) {
     TIM_Cmd(TIM3, ENABLE);
 }
 
+*/
 // PWM 초기화 함수 (TIM2, 채널 2)
 void PWM_Init_Config(void) {
     // TIM2 클럭 활성화

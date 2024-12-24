@@ -55,7 +55,7 @@ PA5-7, PB0-1에 조도센서 핀 설정
 PA1에 PIEZO출력 데이터 핀 설정
 PA9-10에 USART1데이터 전달 핀 설정
 PA2-3에 USART2데이터_Bluetooth 데이터 전달 핀 설정
-PD8-12에 LED출력 핀 설정정
+PD8-12에 LED출력 핀 설정
 */
 void GPIO_Configure(void)
 {
@@ -154,10 +154,10 @@ void ADC_Configure(void)
 
 }
 
-//USART의 인터럽트 관련 우선순위 설정정
+//USART의 인터럽트 관련 우선순위 설정
 //Group2로 Preemption과 sub에 각각 2비트씩 할당
 //USART1에 0, 0으로 인터럽트 우선순위 설정
-//USART2에 1, 1으로 인터럽트 우선순위 설정정
+//USART2에 1, 1으로 인터럽트 우선순위 설정
 void NVIC_Configure(void) {
 
     NVIC_InitTypeDef NVIC_InitStructure;
@@ -183,7 +183,7 @@ void NVIC_Configure(void) {
 }
 
 // PWM 초기화 함수 (TIM2, 채널 2)
-// 펄스 폭 변조를 통해서 PIEZO의 sound를 출력력
+// 펄스 폭 변조를 통해서 PIEZO의 sound를 출력
 void PWM_Init_Config(void) {
     // TIM2 클럭 활성화
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
@@ -209,7 +209,7 @@ void PWM_Init_Config(void) {
     TIM_Cmd(TIM2, ENABLE);
 }
 
-//DMA를 통해서 직접 메모리 접근을 수행행
+//DMA를 통해서 직접 메모리 접근을 수행
 void DMA_Configure(void)
 {
     DMA_InitTypeDef DMA_Instructure;
@@ -232,7 +232,7 @@ void DMA_Configure(void)
     DMA_Cmd(DMA1_Channel1, ENABLE);
 }
 
-//USART1, 2에 대한 값 설정정
+//USART1, 2에 대한 값 설정
 void USART_Configure(void) {
     USART_InitTypeDef USART1_InitStructure;
     USART_Cmd(USART1, ENABLE);
@@ -321,7 +321,7 @@ void SendString(const char *str) {
   }
 }
 
-//조도센서에 들어온 값을 확인하기 위해서, 정수 값을 출력하도록 설정정
+//조도센서에 들어온 값을 확인하기 위해서, 정수 값을 출력하도록 설정
 void SendInt(int tmp_val){
         int charDigit[4];
          for (int i = 0; i < 4; i++) {

@@ -12,6 +12,7 @@
 uint32_t flag = 0;
 uint32_t light;
 uint16_t value = 0;
+//5개의 조도센서 별 빛이 입력된 기준 값
 volatile uint32_t ADC_Value[5];
 uint32_t THRESHOLD1 = 4050; // 기준치
 uint32_t THRESHOLD2 = 4050; // 기준치
@@ -47,6 +48,15 @@ void RCC_Configure(void)
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE); //AFIO기능 사용 -> GPIO를 외부 인터럽트로 사용
 }
 
+/*
+관련된 핀 설정
+KEY1과 KEY4에 발사버튼과 게임 시작버튼 매칭 -> BUTTON을 따로 두어서 보드에 버튼을 누르지 않아도 작동하도록 설정
+PA5-7, PB0-1에 조도센서 핀 설정
+PA1에 PIEZO출력 데이터 핀 설정
+PA9-10에 USART1데이터 전달 핀 설정
+PA2-3에 USART2데이터_Bluetooth 데이터 전달 핀 설정
+PD8-12에 LED출력 핀 설정정
+*/
 void GPIO_Configure(void)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
@@ -110,6 +120,7 @@ void GPIO_Configure(void)
     GPIO_SetBits(GPIOD, GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12);
 }
 
+//ADC를 통해서 조도센서의 값을 디지털로 변환환
 void ADC_Configure(void) 
 {
     ADC_InitTypeDef ADC_InitStruct;
@@ -144,6 +155,9 @@ void ADC_Configure(void)
 }
 
 //USART의 인터럽트 관련 우선순위 설정정
+//Group2로 Preemption과 sub에 각각 2비트씩 할당
+//USART1에 0, 0으로 인터럽트 우선순위 설정
+//USART2에 1, 1으로 인터럽트 우선순위 설정정
 void NVIC_Configure(void) {
 
     NVIC_InitTypeDef NVIC_InitStructure;
@@ -199,6 +213,7 @@ void LaserShoot_Init(void) {
 
 */
 // PWM 초기화 함수 (TIM2, 채널 2)
+// 펄스 폭 변조를 통해서 PIEZO의 sound를 출력력
 void PWM_Init_Config(void) {
     // TIM2 클럭 활성화
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
@@ -224,7 +239,7 @@ void PWM_Init_Config(void) {
     TIM_Cmd(TIM2, ENABLE);
 }
 
-
+//DMA를 통해서 직접 메모리 접근을 수행행
 void DMA_Configure(void)
 {
     DMA_InitTypeDef DMA_Instructure;
@@ -247,6 +262,7 @@ void DMA_Configure(void)
     DMA_Cmd(DMA1_Channel1, ENABLE);
 }
 
+//USART1, 2에 대한 값 설정정
 void USART_Configure(void) {
     USART_InitTypeDef USART1_InitStructure;
     USART_Cmd(USART1, ENABLE);
@@ -271,6 +287,8 @@ void USART_Configure(void) {
     USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
 }
 
+//기본적인 LED핀 설정 -> 전부 불이 켜지도록
+//Sensor의 값들을 조정 -> 만약 조도센서에 불이 비춰진 경우, Sensor의 값을 조정
 void LEDInit()
 {
     GPIO_SetBits(GPIOD, GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12);
@@ -282,6 +300,7 @@ void LEDInit()
     Sensor5 = 0;
 }
 
+//Bluetooth에서 PC의 Putty로 입력한 데이터 전달
 void USART1_IRQHandler() {
   uint16_t word;
   if(USART_GetITStatus(USART1,USART_IT_RXNE)!=RESET){
@@ -291,7 +310,7 @@ void USART1_IRQHandler() {
     USART_ClearITPendingBit(USART1,USART_IT_RXNE);
   }
 }
-
+//PC의 Putty로 입력한 데이터를 Bluetooth로 전달
 void USART2_IRQHandler() {
   uint16_t word;
   if(USART_GetITStatus(USART2,USART_IT_RXNE)!=RESET){
@@ -323,6 +342,7 @@ void SendData(uint16_t data)
     while ((USART2->SR & USART_SR_TC) == 0);
 }
 
+//SendData가 16비트데이터를 전송하므로, 전체 string을 출력하도록 수행
 void SendString(const char *str) {
   while(*str) {
     if(*str != '\0'){
@@ -331,6 +351,7 @@ void SendString(const char *str) {
   }
 }
 
+//조도센서에 들어온 값을 확인하기 위해서, 정수 값을 출력하도록 설정정
 void SendInt(int tmp_val){
         int charDigit[4];
          for (int i = 0; i < 4; i++) {

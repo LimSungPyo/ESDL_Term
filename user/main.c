@@ -120,7 +120,7 @@ void GPIO_Configure(void)
     GPIO_SetBits(GPIOD, GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12);
 }
 
-//ADC를 통해서 조도센서의 값을 디지털로 변환환
+//ADC를 통해서 조도센서의 값을 디지털로 변환
 void ADC_Configure(void) 
 {
     ADC_InitTypeDef ADC_InitStruct;

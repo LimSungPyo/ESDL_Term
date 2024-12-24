@@ -365,18 +365,6 @@ void SendInt(int tmp_val){
              SendData(charDigit[i] + 48);
          }
          SendString("\r\n");
-         /*
-        SendString("\r\n");
-        SendString(" ");
-        SendData(tmp_val%10 + 48);
-        tmp_val = tmp_val/10;
-        SendData(tmp_val%10 + 48);
-        tmp_val = tmp_val/10;
-        SendData(tmp_val%10 + 48);
-        tmp_val = tmp_val/10;
-        SendData(tmp_val%10 + 48);
-        SendString("\r\n");
-        */
 }
 
 /* 각각 조도센서의 아날로그 값이 처음으로 임계점 아래로 떨어질때만 Sensor 값을 1로 업데이트하고 CurrentState를 1 증가시킴

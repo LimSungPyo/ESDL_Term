@@ -182,36 +182,6 @@ void NVIC_Configure(void) {
     NVIC_Init(&NVIC_InitStructure);
 }
 
-/*
-
-// 레이저용 PWM 초기화 (TIM3, 채널 1)
-void LaserShoot_Init(void) {
-    // 레이저를 발사하는 초기화 함수 (예: PWM 신호 설정)
-    // 타이머와 PWM을 설정하는 코드가 여기에 포함됩니다.
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);  // TIM3 클럭 활성화
-
-    TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
-    TIM_OCInitTypeDef TIM_OCInitStructure;
-
-    // 기본 타이머 설정
-    TIM_TimeBaseStructure.TIM_Period = 999;       // 자동 리로드 값 (1kHz 주파수)
-    TIM_TimeBaseStructure.TIM_Prescaler = 71;     // 분주비 (1MHz 클럭)
-    TIM_TimeBaseStructure.TIM_ClockDivision = 0;
-    TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-    TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
-
-    // PWM 모드 설정 (채널 1, 50% 듀티)
-    TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
-    TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-    TIM_OCInitStructure.TIM_Pulse = 999;          // 듀티 사이클 50% (레이저 발사)
-    TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-    TIM_OC1Init(TIM3, &TIM_OCInitStructure);
-
-    // 타이머 활성화
-    TIM_Cmd(TIM3, ENABLE);
-}
-
-*/
 // PWM 초기화 함수 (TIM2, 채널 2)
 // 펄스 폭 변조를 통해서 PIEZO의 sound를 출력력
 void PWM_Init_Config(void) {
@@ -450,7 +420,6 @@ int main() {
     ADC_Configure();
     DMA_Configure();
     PWM_Init_Config();   // PWM 초기화
-    //LaserShoot_Init();
     USART_Configure();
     NVIC_Configure();
     GPIO_SetBits(GPIOB, GPIO_Pin_4); // PB4를 Low로 설정하여 레이저 끄기 (ResetBits)
@@ -477,32 +446,25 @@ int main() {
       LEDInit();
       while(1)
       {
-          //GPIO_ResetBits(GPIOB, GPIO_Pin_4); // PB4를 Low로 설정하여 레이저 끄기 (ResetBits)
           //보드의 버튼을 누르면 총알 발사.
           //PreviousState != Currentstate -> 조도센서에 레이저가 적중했다
           //PreviousState == Currentstate -> 조도센서에 레이저가 적중하지 않았다
           //적중했다면 PreviousState를 Currentstate값으로 업데이트, 다시 계속 비교
           if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_4) == Bit_RESET) // KEY1을 눌렀을 시
           {
-              GPIO_SetBits(GPIOB, GPIO_Pin_4); // PB4를 High로 설정하여 레이저 발사 (SetBits)
               TIM_SetCompare2(TIM2, 500);
               SendString("===========[Fired]===========\r\n");
-              //TIM_SetCompare1(TIM3, 999); // 레이저 발사
               UpdateSensorStates();
               if (PreviousState != CurrentState) { // 조도센서에 레이저가 적중했다면,
                   SendString("hit!\r\n");
                   point += 20;
                   TIM_SetCompare2(TIM2, 500); // 50% 듀티 (소리 ON)
                   PreviousState = CurrentState;
-              } else { // 빗나갔다면
-                  
-              }
+              } 
               bullet--;
               delay();
           } else {
               TIM_SetCompare2(TIM2, 0);   // 듀티 0% (소리 OFF)
-              //TIM_SetCompare1(TIM3, 0); // 레이저 0% (레이저 OFF)
-              GPIO_ResetBits(GPIOB, GPIO_Pin_4); // PB4를 Low로 설정하여 레이저 끄기 (ResetBits)
           }
           if(bullet == 0){
               char msg_end[] = " ===========[Finish]===========\r\n";

@@ -481,7 +481,7 @@ int main() {
               //TIM_SetCompare1(TIM3, 999); // 레이저 발사
               UpdateSensorStates();
               if (PreviousState != CurrentState) { // 조도센서에 레이저가 적중했다면,
-                  SendString("if case\r\n");
+                  SendString("hit!\r\n");
                   point += 20;
                   TIM_SetCompare2(TIM2, 500); // 50% 듀티 (소리 ON)
                   PreviousState = CurrentState;
